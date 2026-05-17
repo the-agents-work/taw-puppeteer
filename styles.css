@@ -208,6 +208,7 @@ h1 {
 
 .controls {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 28px 0;
 }
@@ -238,6 +239,7 @@ button:hover,
 }
 
 .switch {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -278,6 +280,14 @@ button:hover,
   width: 0%;
   height: 100%;
   background: var(--gold);
+}
+
+.voice-status {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: var(--paper-muted);
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .stats {

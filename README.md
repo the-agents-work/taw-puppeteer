@@ -23,10 +23,32 @@ http://localhost:5173
 
 Hoặc mở trực tiếp `index.html` trong browser.
 
+## Vbee TTS
+
+App chạy qua `server.js` để giữ Vbee token ở server-side, không lộ ra browser.
+
+Tạo file `.env.local`:
+
+```bash
+VBEE_APP_ID=e27dcf72-1fe0-4417-9d2e-66940c34fd09
+VBEE_TOKEN=your_vbee_token_here
+VBEE_VOICE_MAI=hn_female_ngochuyen_full_48k-fhg
+VBEE_VOICE_LONG=hn_male_thanhlong_talk_48k-fhg
+```
+
+Sau đó restart:
+
+```bash
+npm run dev
+```
+
+Nếu chưa có token, nút `Bật TTS` sẽ fallback sang Web Speech API của browser để demo ngay.
+
 ## Kiểm tra
 
 ```bash
 npm run check
+npm run check:server
 ```
 
 ## Cách hoạt động

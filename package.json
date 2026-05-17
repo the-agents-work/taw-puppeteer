@@ -4,8 +4,9 @@
   "description": "Code-driven 2D puppet film prototype with fixed backgrounds, generated SVG characters, and timeline animation.",
   "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 5173",
-    "check": "node --check script.js",
+    "dev": "node server.js",
+    "check": "node --check script.js && node --check server.js",
+    "check:server": "node --check server.js",
     "open": "open http://localhost:5173"
   },
   "keywords": [

@@ -95,15 +95,21 @@ const speakerName = document.querySelector("#speakerName");
 const progressBar = document.querySelector("#progressBar");
 const timecode = document.querySelector("#timecode");
 const togglePlayback = document.querySelector("#togglePlayback");
+const toggleVoice = document.querySelector("#toggleVoice");
 const restartScene = document.querySelector("#restartScene");
 const shadowMode = document.querySelector("#shadowMode");
 const exportSvg = document.querySelector("#exportSvg");
+const voiceStatus = document.querySelector("#voiceStatus");
 
 let startedAt = performance.now();
 let pausedAt = 0;
 let elapsedBeforePause = 0;
 let isPlaying = true;
 let activeActor = "mai";
+let voiceEnabled = false;
+let lastSpokenBeat = -1;
+let currentAudio = null;
+let ttsMode = "off";
 
 function createPuppetSvg(actorKey, preset) {
   const accessory =
@@ -198,9 +204,11 @@ function formatTime(seconds) {
 function render(now) {
   const seconds = currentElapsed(now);
   const beat = activeBeat(seconds);
+  const beatIndex = timeline.indexOf(beat);
 
   setPuppetState(beat, seconds);
   setCaption(beat);
+  speakBeat(beat, beatIndex);
 
   progressBar.style.width = `${(seconds / totalDuration) * 100}%`;
   timecode.textContent = formatTime(seconds);
@@ -215,6 +223,7 @@ function setPlaying(nextIsPlaying) {
     pausedAt = currentElapsed(performance.now());
     isPlaying = false;
     togglePlayback.textContent = "Tiếp tục";
+    stopVoice();
     return;
   }
 
@@ -222,6 +231,70 @@ function setPlaying(nextIsPlaying) {
   elapsedBeforePause = pausedAt;
   isPlaying = true;
   togglePlayback.textContent = "Tạm dừng";
+}
+
+async function speakBeat(beat, beatIndex) {
+  if (!voiceEnabled || !isPlaying || beatIndex === lastSpokenBeat) return;
+
+  lastSpokenBeat = beatIndex;
+  stopVoice();
+  voiceStatus.textContent = "Đang tạo giọng...";
+
+  try {
+    const response = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ actor: beat.actor, text: beat.text }),
+    });
+    const data = await response.json();
+
+    if (response.status === 412 || data.fallback === "browser-speech") {
+      ttsMode = "browser";
+      speakWithBrowser(beat);
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || "TTS failed");
+    }
+
+    ttsMode = "vbee";
+    currentAudio = new Audio(data.audioUrl);
+    currentAudio.play();
+    voiceStatus.textContent = `Vbee: ${data.voiceCode}`;
+  } catch (error) {
+    ttsMode = "browser";
+    voiceStatus.textContent = "Vbee chưa sẵn sàng, dùng giọng browser.";
+    speakWithBrowser(beat);
+  }
+}
+
+function speakWithBrowser(beat) {
+  if (!("speechSynthesis" in window)) {
+    voiceStatus.textContent = "Browser này không hỗ trợ TTS local.";
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(beat.text);
+  utterance.lang = "vi-VN";
+  utterance.rate = beat.actor === "long" ? 0.92 : 1.02;
+  utterance.pitch = beat.actor === "long" ? 0.82 : 1.14;
+  utterance.onstart = () => {
+    voiceStatus.textContent = "Đang dùng TTS local của browser.";
+  };
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+
+function stopVoice() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+  if ("speechSynthesis" in window) {
+    speechSynthesis.cancel();
+  }
 }
 
 function exportActiveCharacterSvg() {
@@ -240,12 +313,28 @@ function exportActiveCharacterSvg() {
 
 togglePlayback.addEventListener("click", () => setPlaying(!isPlaying));
 
+toggleVoice.addEventListener("click", () => {
+  voiceEnabled = !voiceEnabled;
+  toggleVoice.textContent = voiceEnabled ? "Tắt TTS" : "Bật TTS";
+  voiceStatus.textContent = voiceEnabled ? "TTS đã bật" : "TTS đang tắt";
+
+  if (!voiceEnabled) {
+    stopVoice();
+    ttsMode = "off";
+    return;
+  }
+
+  lastSpokenBeat = -1;
+});
+
 restartScene.addEventListener("click", () => {
   startedAt = performance.now();
   pausedAt = 0;
   elapsedBeforePause = 0;
+  lastSpokenBeat = -1;
   isPlaying = true;
   togglePlayback.textContent = "Tạm dừng";
+  stopVoice();
 });
 
 shadowMode.addEventListener("change", (event) => {
