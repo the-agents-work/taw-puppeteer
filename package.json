@@ -1,0 +1,19 @@
+{
+  "name": "taw-puppeteer",
+  "version": "0.1.0",
+  "description": "Code-driven 2D puppet film prototype with fixed backgrounds, generated SVG characters, and timeline animation.",
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 5173",
+    "check": "node --check script.js",
+    "open": "open http://localhost:5173"
+  },
+  "keywords": [
+    "puppet",
+    "animation",
+    "svg",
+    "timeline",
+    "ai-film"
+  ],
+  "license": "MIT"
+}

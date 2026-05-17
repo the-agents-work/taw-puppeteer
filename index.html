@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>taw-puppeteer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800&display=swap&subset=vietnamese,latin"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="stage-wrap" aria-label="Sân khấu phim rối tạo sinh">
+        <div class="stage" id="stage">
+          <img class="stage-bg" src="./assets/stage-background.png" alt="" />
+
+          <div class="puppet-slot actor-left" id="puppetMai" data-actor="mai"></div>
+          <div class="puppet-slot actor-right" id="puppetLong" data-actor="long"></div>
+
+          <div class="water-front" aria-hidden="true"></div>
+
+          <div class="caption-panel" id="captionPanel">
+            <span class="speaker" id="speakerName">Mai</span>
+            <span id="captionText">Mình thử làm phim mà không cần generate video từng cảnh nhé?</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <div>
+          <p class="eyebrow">taw-puppeteer</p>
+          <h1>Phim rối bằng SVG layer + timeline</h1>
+          <p class="summary">
+            Một nền cố định, nhân vật là SVG được sinh từ config. Timeline chỉ đổi miệng, mày, tay và caption.
+          </p>
+        </div>
+
+        <div class="controls">
+          <button class="primary" id="togglePlayback" type="button">Tạm dừng</button>
+          <button id="restartScene" type="button">Chạy lại</button>
+          <button id="exportSvg" type="button">Xuất SVG</button>
+          <label class="switch">
+            <input id="shadowMode" type="checkbox" />
+            <span>Múa bóng</span>
+          </label>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-head">
+            <span>Timeline</span>
+            <span id="timecode">00:00</span>
+          </div>
+          <div class="progress">
+            <span id="progressBar"></span>
+          </div>
+        </div>
+
+        <dl class="stats">
+          <div>
+            <dt>Character</dt>
+            <dd>JSON spec -> SVG</dd>
+          </div>
+          <div>
+            <dt>Mouth sync</dt>
+            <dd>Viseme path swap</dd>
+          </div>
+          <div>
+            <dt>Render</dt>
+            <dd>Browser now, ffmpeg sau</dd>
+          </div>
+        </dl>
+      </aside>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
