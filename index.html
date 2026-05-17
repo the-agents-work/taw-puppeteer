@@ -27,6 +27,11 @@
             <span class="speaker" id="speakerName">Mai</span>
             <span id="captionText">Mình thử làm phim mà không cần generate video từng cảnh nhé?</span>
           </div>
+
+          <button class="start-overlay" id="startFilm" type="button">
+            <span>Bắt đầu phim</span>
+            <small>Tự tạo giọng rồi phát timeline</small>
+          </button>
         </div>
       </section>
 
@@ -41,7 +46,7 @@
 
         <div class="controls">
           <button class="primary" id="togglePlayback" type="button">Tạm dừng</button>
-          <button id="toggleVoice" type="button">Bật TTS</button>
+          <button id="toggleVoice" type="button">Tắt TTS</button>
           <button id="restartScene" type="button">Chạy lại</button>
           <button id="exportSvg" type="button">Xuất SVG</button>
           <label class="switch">
@@ -58,7 +63,7 @@
           <div class="progress">
             <span id="progressBar"></span>
           </div>
-          <p class="voice-status" id="voiceStatus">TTS đang tắt</p>
+          <p class="voice-status" id="voiceStatus">Đang chuẩn bị TTS...</p>
         </div>
 
         <dl class="stats">

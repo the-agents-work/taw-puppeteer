@@ -100,16 +100,20 @@ const restartScene = document.querySelector("#restartScene");
 const shadowMode = document.querySelector("#shadowMode");
 const exportSvg = document.querySelector("#exportSvg");
 const voiceStatus = document.querySelector("#voiceStatus");
+const startFilm = document.querySelector("#startFilm");
 
 let startedAt = performance.now();
 let pausedAt = 0;
 let elapsedBeforePause = 0;
-let isPlaying = true;
+let isPlaying = false;
 let activeActor = "mai";
-let voiceEnabled = false;
+let voiceEnabled = true;
 let lastSpokenBeat = -1;
 let currentAudio = null;
 let ttsMode = "off";
+let hasStarted = false;
+const audioCache = new Map();
+const prefetchState = new Map();
 
 function createPuppetSvg(actorKey, preset) {
   const accessory =
@@ -238,35 +242,56 @@ async function speakBeat(beat, beatIndex) {
 
   lastSpokenBeat = beatIndex;
   stopVoice();
-  voiceStatus.textContent = "Đang tạo giọng...";
+  voiceStatus.textContent = audioCache.has(beatIndex) ? "Đang phát Vbee..." : "Đang tạo giọng...";
 
   try {
-    const response = await fetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ actor: beat.actor, text: beat.text }),
-    });
-    const data = await response.json();
-
-    if (response.status === 412 || data.fallback === "browser-speech") {
-      ttsMode = "browser";
-      speakWithBrowser(beat);
-      return;
-    }
-
-    if (!response.ok) {
-      throw new Error(data.error || "TTS failed");
-    }
-
+    const data = await getBeatAudio(beat, beatIndex);
     ttsMode = "vbee";
     currentAudio = new Audio(data.audioUrl);
-    currentAudio.play();
+    await currentAudio.play();
     voiceStatus.textContent = `Vbee: ${data.voiceCode}`;
   } catch (error) {
     ttsMode = "browser";
     voiceStatus.textContent = "Vbee chưa sẵn sàng, dùng giọng browser.";
     speakWithBrowser(beat);
   }
+}
+
+async function prefetchTimelineAudio() {
+  voiceStatus.textContent = "Đang gen giọng Vbee cho timeline...";
+  await Promise.allSettled(timeline.map((beat, index) => getBeatAudio(beat, index)));
+  const readyCount = [...audioCache.values()].filter(Boolean).length;
+  voiceStatus.textContent = readyCount
+    ? `Đã sẵn ${readyCount}/${timeline.length} câu Vbee`
+    : "Vbee chưa sẵn sàng, sẽ dùng giọng browser.";
+}
+
+async function getBeatAudio(beat, beatIndex) {
+  if (audioCache.has(beatIndex)) return audioCache.get(beatIndex);
+  if (prefetchState.has(beatIndex)) return prefetchState.get(beatIndex);
+
+  const promise = fetch("/api/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ actor: beat.actor, text: beat.text }),
+  })
+    .then(async (response) => {
+      const data = await response.json();
+      if (response.status === 412 || data.fallback === "browser-speech") {
+        throw new Error("browser-speech");
+      }
+      if (!response.ok) {
+        throw new Error(data.error || "TTS failed");
+      }
+      audioCache.set(beatIndex, data);
+      return data;
+    })
+    .finally(() => {
+      prefetchState.delete(beatIndex);
+    });
+
+  prefetchState.set(beatIndex, promise);
+  return promise;
 }
 
 function speakWithBrowser(beat) {
@@ -325,6 +350,7 @@ toggleVoice.addEventListener("click", () => {
   }
 
   lastSpokenBeat = -1;
+  prefetchTimelineAudio();
 });
 
 restartScene.addEventListener("click", () => {
@@ -333,6 +359,8 @@ restartScene.addEventListener("click", () => {
   elapsedBeforePause = 0;
   lastSpokenBeat = -1;
   isPlaying = true;
+  hasStarted = true;
+  startFilm.classList.add("hidden");
   togglePlayback.textContent = "Tạm dừng";
   stopVoice();
 });
@@ -343,5 +371,21 @@ shadowMode.addEventListener("change", (event) => {
 
 exportSvg.addEventListener("click", exportActiveCharacterSvg);
 
+startFilm.addEventListener("click", async () => {
+  hasStarted = true;
+  startFilm.classList.add("hidden");
+  stopVoice();
+  lastSpokenBeat = -1;
+  startedAt = performance.now();
+  elapsedBeforePause = 0;
+  pausedAt = 0;
+  isPlaying = true;
+  togglePlayback.textContent = "Tạm dừng";
+  if (voiceEnabled) {
+    prefetchTimelineAudio();
+  }
+});
+
 mountCharacters();
+prefetchTimelineAudio();
 requestAnimationFrame(render);
